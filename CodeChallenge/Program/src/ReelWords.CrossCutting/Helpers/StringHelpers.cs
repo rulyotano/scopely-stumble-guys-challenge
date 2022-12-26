@@ -7,7 +7,7 @@ public static class StringHelpers
 {
     public static string Sanitize(this string value)
     {
-        if (value == null) throw new ArgumentException("Sanitized stirng argument shouldn't be null");
+        if (value == null) throw new ArgumentException("Sanitized string argument shouldn't be null");
 
         var builder = new StringBuilder();
         foreach (var character in value.Normalize(NormalizationForm.FormD).ToLowerInvariant())
