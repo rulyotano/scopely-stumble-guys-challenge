@@ -1,24 +1,19 @@
-﻿using System;
+﻿using ReelWords.Domain.Entities.Game;
+using ReelWords.Game;
+using System.Threading.Tasks;
 
 namespace ReelWords
 {
     static class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            bool playing = true;
+            var gameManager = await GameManager.CreateGameManager(new ReelsProvider(), new ScoresProvider(), new ValidWordsProvider());
+            var consolePlayer = new ConsolePlayer();
 
-            while (playing)
-            {
-                string input = Console.ReadLine();
+            await gameManager.InitializeGame(new string[] { consolePlayer.Id });
 
-                if (input == "quit") playing = false;
-                // Run game logic here using the user input string
-
-                // Create simple unit tests to test your code in the ReelWordsTests project,
-                // don't worry about creating tests for everything, just important functions as
-                // seen for the Trie tests
-            }
+            consolePlayer.Play(gameManager);
         }
     }
 }
