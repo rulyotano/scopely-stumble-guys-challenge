@@ -16,7 +16,7 @@ public class ConsolePlayer : IPlayer
 
     public void Play(IGameManager gameManager)
     {
-        ShowWelcome();
+        ShowWelcome(gameManager);
         while (true)
         {
             var option = Console.ReadLine();
@@ -57,9 +57,10 @@ public class ConsolePlayer : IPlayer
 'quit'            Finish the game");
     }
 
-    private void ShowWelcome()
+    private void ShowWelcome(IGameManager gameManager)
     {
-        Console.WriteLine(@"Welcome to the 'Reel Words' game. Press 'help' to see all available options.");
+        Console.WriteLine(@$"Welcome to the 'Reel Words' game. Press 'help' to see all available options.
+You started the game with the following available letters to play: {GetLettersFromReels(gameManager)}");
     }
 
     private void ShowPoints(IGameManager gameManager)
@@ -68,10 +69,12 @@ public class ConsolePlayer : IPlayer
         Console.WriteLine($"So far you've earned {points} points.");
     }
 
-    private void ShowLetters(IGameManager gameManager)
+    private void ShowLetters(IGameManager gameManager) => Console.WriteLine($"You can create any word with the following letters: '{GetLettersFromReels(gameManager)}'.");
+
+    private string GetLettersFromReels(IGameManager gameManager)
     {
         var availableLetters = gameManager.GetValidCharacters(Id);
-        Console.WriteLine($"You can create any word with the following letters: '{string.Join(", ", availableLetters)}'.");
+        return string.Join(" | ", availableLetters).ToUpper();
     }
 
     private void SubmitWord(IGameManager gameManager, string[] optionSplitted)
@@ -89,7 +92,8 @@ public class ConsolePlayer : IPlayer
         {   
             case PlayWordResult.Success:
                 var newScore = gameManager.GetPoints(Id);
-                Console.WriteLine($"Good job! Word accepted. You've won {newScore - previousScore} points. Your new score is '{newScore}'");
+                Console.WriteLine(@$"Good job! Word accepted. You've won {newScore - previousScore} points. Your new score is '{newScore}'.
+Now you can use: {GetLettersFromReels(gameManager)}");
                 break;
             case PlayWordResult.NotExistingWord:
                 Console.WriteLine($"Word '{word}' doesn't exist in this game's dictionary.");
