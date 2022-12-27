@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using ReelWords.CrossCutting.Helpers;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ReelWords.Domain.Entities.Game;
@@ -10,7 +12,7 @@ public interface IGameManager
     int GetPoints(string playerId);
 }
 
-public class GameManager: IGameManager
+public class GameManager : IGameManager
 {
     private readonly IDictionary<string, PlayerData> _players;
     private readonly IReelsProvider _reelsProvider;
@@ -31,25 +33,27 @@ public class GameManager: IGameManager
         return gameManager;
     }
 
-    public async Task InitializeGame(IEnumerable<string> playerIds)
+    public async Task InitializeGame(IEnumerable<string> playerIds, bool shuffle = true)
     {
         foreach (var playerId in playerIds)
         {
-            await RegisterPlayerAsync(playerId);
+            await RegisterPlayerAsync(playerId, shuffle);
         }
     }
 
     public PlayWordResult PlayWord(string playerId, string word)
     {
+        if (string.IsNullOrWhiteSpace(word)) return PlayWordResult.NotExistingWord;
         var playerData = _players[playerId];
         var playerReel = playerData.Reels;
-        var result = ValidateWord(playerReel, word);
+        var sanitazedWord = word.Sanitize();
+        var result = ValidateWord(playerReel, sanitazedWord);
 
         if (result == PlayWordResult.Success)
         {
-            var wordScore = _scores.GetWordScore(word);
-            playerReel.PlayWord(word);
-            playerData.Score.AddScore(word, wordScore);
+            var wordScore = _scores.GetWordScore(sanitazedWord);
+            playerReel.PlayWord(sanitazedWord);
+            playerData.Score.AddScore(sanitazedWord, wordScore);
         }
 
         return result;
@@ -63,6 +67,7 @@ public class GameManager: IGameManager
 
     public int GetPoints(string playerId)
     {
+        ValidatePlayerId(playerId);
         var playerData = GetPlayeData(playerId);
         return playerData.Score.Score;
 
@@ -80,11 +85,16 @@ public class GameManager: IGameManager
         return _players[playerId];
     }
 
-    private async Task RegisterPlayerAsync(string playerId)
+    private async Task RegisterPlayerAsync(string playerId, bool shuffle)
     {
         var reels = await _reelsProvider.GetReelsForPlayer(playerId);
-        reels.Shuffle();
+        if (shuffle) reels.Shuffle();
         _players.Add(playerId, new PlayerData(PlayerScore.CreatePlayerScore(), reels));
+    }
+
+    private void ValidatePlayerId(string playerId)
+    {
+        if (!_players.ContainsKey(playerId)) throw new ArgumentException("Player not registered in this game");
     }
 
     private sealed record PlayerData(PlayerScore Score, ReelCollection Reels);
